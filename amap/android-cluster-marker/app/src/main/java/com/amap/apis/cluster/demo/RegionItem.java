@@ -10,6 +10,7 @@ import com.amap.apis.cluster.ClusterItem;
 public class RegionItem implements ClusterItem {
     private LatLng mLatLng;
     private String mTitle;
+    private String uuidKey;// 要产生一个唯一key  建议以时间戳 + index
     public RegionItem(LatLng latLng, String title) {
         mLatLng=latLng;
         mTitle=title;
@@ -24,4 +25,11 @@ public class RegionItem implements ClusterItem {
         return mTitle;
     }
 
+    public String getUuidKey() {
+        return uuidKey;
+    }
+
+    public void setUuidKey(String uuidKey) {
+        this.uuidKey = uuidKey;
+    }
 }

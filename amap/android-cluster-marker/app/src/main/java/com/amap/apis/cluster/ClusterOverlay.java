@@ -23,6 +23,7 @@ import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.animation.AlphaAnimation;
 import com.amap.api.maps.model.animation.Animation;
+import com.amap.apis.cluster.demo.RegionItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
         AMap.OnMarkerClickListener {
     private AMap mAMap;
     private Context mContext;
-    private List<ClusterItem> mClusterItems;
+    private List<RegionItem> mClusterItems;
     /*
       将所有的 显示数据 保存起来 ，用于 最后退出的 时候删除
       每一个 元素 是一个组   一个组里面又包含 多个 ClusterItem
@@ -47,7 +48,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     private ClusterRender mClusterRender;
     private List<Marker> mAddMarkers = new ArrayList<Marker>();
     private double mClusterDistance;
-    private LruCache<Integer, BitmapDescriptor> mLruCache;
+    private LruCache<String, BitmapDescriptor> mLruCache;
     private HandlerThread mMarkerHandlerThread = new HandlerThread("addMarker");
     private HandlerThread mSignClusterThread = new HandlerThread("calculateCluster");
     private Handler mMarkerhandler;
@@ -76,10 +77,10 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
      * @param clusterSize
      * @param context
      */
-    public ClusterOverlay(AMap amap, List<ClusterItem> clusterItems,
+    public ClusterOverlay(AMap amap, List<RegionItem> clusterItems,
                           int clusterSize, Context context) {
 //默认最多会缓存80张图片作为聚合显示元素图片,根据自己显示需求和app使用内存情况,可以修改数量
-        mLruCache = new LruCache<Integer, BitmapDescriptor>(80) {
+        mLruCache = new LruCache<String, BitmapDescriptor>(80) {
             protected void entryRemoved(boolean evicted, Integer key, BitmapDescriptor oldValue, BitmapDescriptor newValue) {
                 oldValue.getBitmap().recycle();
             }
@@ -87,7 +88,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
         if (clusterItems != null) {
             mClusterItems = clusterItems;
         } else {
-            mClusterItems = new ArrayList<ClusterItem>();
+            mClusterItems = new ArrayList<RegionItem>();
         }
         mContext = context;
         mClusters = new ArrayList<Cluster>();
@@ -116,7 +117,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
      * 初始化之后，有新的聚合点加入 供外部调用
      * @param item
      */
-    public void addClusterItem(ClusterItem item) {
+    public void addClusterItem(RegionItem item) {
         Message message = Message.obtain();
         message.what = SignClusterHandler.CALCULATE_SINGLE_CLUSTER;
         message.obj = item;
@@ -216,7 +217,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
         // 设置 marker 点参数
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.anchor(0.5f, 0.5f)
-                .icon(getBitmapDes(cluster.getClusterCount())) //设置图片，可以自定义图片
+                .icon(getBitmapDes(cluster)) //设置图片，可以自定义图片
                 .position(latlng);
         // 绑定到 高德地图
         Marker marker = mAMap.addMarker(markerOptions);
@@ -237,7 +238,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
         mIsCanceled = false;
         mClusters.clear();
         LatLngBounds visibleBounds = mAMap.getProjection().getVisibleRegion().latLngBounds;// 获取可视化区域
-        for (ClusterItem clusterItem : mClusterItems) {
+        for (RegionItem clusterItem : mClusterItems) {
             if (mIsCanceled) {
                 return;
             }
@@ -281,7 +282,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
      * clusterItem - 新的点
      * @param clusterItem
      */
-    private void calculateSingleCluster(ClusterItem clusterItem) {
+    private void calculateSingleCluster(RegionItem clusterItem) {
         LatLngBounds visibleBounds = mAMap.getProjection().getVisibleRegion().latLngBounds;
         LatLng latlng = clusterItem.getPosition();
         // 当前的显示区域 是否包含 新的点
@@ -339,27 +340,34 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     /**
      * 获取每个聚合点的绘制样式
      */
-    private BitmapDescriptor getBitmapDes(int num) {
-        BitmapDescriptor bitmapDescriptor = mLruCache.get(num);
-        if (bitmapDescriptor == null) {
+    private BitmapDescriptor getBitmapDes(Cluster  custer) {
+//        LatLng latLng= custer.getClusterItems().get(0).getPosition();
+        if (custer.getClusterItems()==null || custer.getClusterItems().size()<=0){
+            return null;
+        }
+        RegionItem temp=  custer.getClusterItems().get(0);
+        BitmapDescriptor bitmapDescriptor = mLruCache.get(temp.getUuidKey());
+        if (bitmapDescriptor == null)
+        {
             /**
              *  将 textVIew 转换成  图片 格式展示
              */
             TextView textView = new TextView(mContext);
-            if (num > 1) {
-                String tile = String.valueOf(num);
-                textView.setText(tile);
+            if (temp!=null) {
+                textView.setText(temp.getTitle());
             }
             textView.setGravity(Gravity.CENTER);
             textView.setTextColor(Color.BLACK);
             textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-            if (mClusterRender != null && mClusterRender.getDrawAble(num) != null) {
-                textView.setBackgroundDrawable(mClusterRender.getDrawAble(num));
-            } else {
+//            if (mClusterRender != null && mClusterRender.getDrawAble(num) != null) {
+//                textView.setBackgroundDrawable(mClusterRender.getDrawAble(num));
+//            } else
+
+                {
                 textView.setBackgroundResource(R.drawable.defaultcluster);
             }
             bitmapDescriptor = BitmapDescriptorFactory.fromView(textView);
-            mLruCache.put(num, bitmapDescriptor);// 临时保存起来，为了避免内存泄漏，最后 退出时销毁
+            mLruCache.put(temp.getUuidKey(), bitmapDescriptor);// 临时保存起来，为了避免内存泄漏，最后 退出时销毁
 
         }
         return bitmapDescriptor;
@@ -371,7 +379,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     private void updateCluster(Cluster cluster) {
 
             Marker marker = cluster.getMarker();
-            marker.setIcon(getBitmapDes(cluster.getClusterCount()));
+            marker.setIcon(getBitmapDes(cluster));
 
 
     }
@@ -454,7 +462,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
                     calculateClusters();
                     break;
                 case CALCULATE_SINGLE_CLUSTER:// 添加单个 聚合点
-                    ClusterItem item = (ClusterItem) message.obj;
+                    RegionItem item = (RegionItem) message.obj;
                     mClusterItems.add(item);
                     Log.i("yiyi.qi","calculate single cluster");
                     calculateSingleCluster(item);

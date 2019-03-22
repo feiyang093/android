@@ -20,6 +20,7 @@ import com.amap.api.maps.model.Marker;
 import com.amap.apis.cluster.demo.RegionItem;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,10 +95,10 @@ public class MainActivity extends Activity implements ClusterRender,
         new Thread() {
             public void run() {
 
-                List<ClusterItem> items = new ArrayList<ClusterItem>();
-
+                List<RegionItem> items = new ArrayList<RegionItem>();
+                long time=   new Date().getTime();
                 //随机10000个点
-                for (int i = 0; i < 10000; i++) {
+                for (int i = 0; i < 10; i++) {
 
                     double lat = Math.random() + 39.474923;
                     double lon = Math.random() + 116.027116;
@@ -105,6 +106,7 @@ public class MainActivity extends Activity implements ClusterRender,
                     LatLng latLng = new LatLng(lat, lon, false);
                     RegionItem regionItem = new RegionItem(latLng,
                             "test" + i);
+                    regionItem.setUuidKey(time+i+"_"+ Math.random());
                     items.add(regionItem);
 
                 }
@@ -126,7 +128,7 @@ public class MainActivity extends Activity implements ClusterRender,
 
 
     @Override
-    public void onClick(Marker marker, List<ClusterItem> clusterItems) {
+    public void onClick(Marker marker, List<RegionItem> clusterItems) {
 
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (ClusterItem clusterItem : clusterItems) {

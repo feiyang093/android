@@ -1,6 +1,7 @@
 package com.amap.apis.cluster;
 
 import com.amap.api.maps.model.Marker;
+import com.amap.apis.cluster.demo.RegionItem;
 
 import java.util.List;
 
@@ -17,5 +18,5 @@ public interface ClusterClickListener{
          * @param clusterItems
          *            聚合点所包含的元素
          */
-        public void onClick(Marker marker, List<ClusterItem> clusterItems);
+        public void onClick(Marker marker, List<RegionItem> clusterItems);
 }

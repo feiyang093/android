@@ -5,6 +5,7 @@ import android.graphics.Point;
 import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
+import com.amap.apis.cluster.demo.RegionItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,17 +18,17 @@ public class Cluster {
 
 
     private LatLng mLatLng;
-    private List<ClusterItem> mClusterItems;
+    private List<RegionItem> mClusterItems;
     private Marker mMarker;
 
 
     Cluster( LatLng latLng) {
 
         mLatLng = latLng;
-        mClusterItems = new ArrayList<ClusterItem>();
+        mClusterItems = new ArrayList<RegionItem>();
     }
 
-    void addClusterItem(ClusterItem clusterItem) {
+    void addClusterItem(RegionItem clusterItem) {
         mClusterItems.add(clusterItem);
     }
 
@@ -49,7 +50,7 @@ public class Cluster {
         return mMarker;
     }
 
-    List<ClusterItem> getClusterItems() {
+    List<RegionItem> getClusterItems() {
         return mClusterItems;
     }
 }
